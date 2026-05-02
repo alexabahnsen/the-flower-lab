@@ -6,72 +6,323 @@
   <title>The Flower Lab · Pedido confirmado</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@200;300;400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@200;300;400&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: #EDE8DF; color: #1C1410;
-      font-family: 'Jost', sans-serif; font-weight: 300;
-      min-height: 100vh; display: flex; align-items: center; justify-content: center;
-      padding: 40px 24px;
+    :root {
+      --cream: #EDE8DF;
+      --wine: #6E2A38;
+      --rose: #DAAEB5;
+      --ink: #1C1410;
+      --ink-soft: #3D3028;
+      --ink-mute: #8A7C73;
+      --line: rgba(110,42,56,0.12);
     }
-    .card {
-      max-width: 520px; width: 100%; text-align: center;
-      background: #fff; padding: 64px 48px;
-      border: 1px solid rgba(110,42,56,0.1);
+    body {
+      background: var(--cream); color: var(--ink);
+      font-family: 'Jost', sans-serif; font-weight: 300;
+      min-height: 100vh; padding: 40px 24px; line-height: 1.5;
+    }
+    .container { max-width: 720px; margin: 0 auto; }
+
+    .hero {
+      background: #fff;
+      padding: 64px 56px 48px;
+      text-align: center;
+      border: 1px solid var(--line);
+      margin-bottom: 24px;
     }
     .ornament {
       font-family: 'Cormorant Garamond', serif; font-style: italic;
-      font-size: 56px; color: #DAAEB5; margin-bottom: 24px; line-height: 1;
+      font-size: 64px; color: var(--rose); margin-bottom: 16px; line-height: 1;
     }
     .eyebrow {
-      font-family: 'Jost', sans-serif; font-weight: 200; font-size: 9;
-      letter-spacing: 6px; color: #6E2A38; opacity: 0.7; margin-bottom: 20px;
+      font-family: 'Jost', sans-serif; font-weight: 200; font-size: 9px;
+      letter-spacing: 6px; color: var(--wine); opacity: 0.8;
+      margin-bottom: 18px;
     }
     h1 {
-      font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 42px;
-      line-height: 1.1; color: #1C1410; margin-bottom: 24px;
+      font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 46px;
+      line-height: 1.1; color: var(--ink); margin-bottom: 20px;
     }
-    p {
+    h1 em { font-style: italic; color: var(--wine); }
+    .lead {
       font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 300;
-      font-size: 17px; line-height: 1.6; color: #3D3028; margin-bottom: 16px;
+      font-size: 18px; line-height: 1.55; color: var(--ink-soft);
+      max-width: 480px; margin: 0 auto 12px;
     }
-    .order-id {
+    .divider { width: 36px; height: 1px; background: var(--rose); margin: 28px auto; }
+    .order-ref {
+      display: inline-block;
+      font-family: 'Jost', sans-serif; font-weight: 300; font-size: 9px;
+      letter-spacing: 3px; color: var(--ink-mute);
+      padding: 8px 16px; background: var(--cream);
+      margin-top: 4px;
+    }
+
+    .summary-card {
+      background: #fff;
+      padding: 40px 48px;
+      border: 1px solid var(--line);
+      margin-bottom: 24px;
+    }
+    .summary-card h2 {
+      font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 26px;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .detail-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 28px 32px;
+    }
+    @media (max-width: 600px) {
+      .detail-grid { grid-template-columns: 1fr; }
+      .summary-card, .hero { padding: 32px 24px; }
+      h1 { font-size: 34px; }
+    }
+    .detail-block .label {
+      font-family: 'Jost', sans-serif; font-weight: 300; font-size: 9px;
+      letter-spacing: 3px; text-transform: uppercase;
+      color: var(--ink-mute); margin-bottom: 8px;
+    }
+    .detail-block .value {
+      font-family: 'Cormorant Garamond', serif; font-weight: 400; font-size: 16px;
+      color: var(--ink); line-height: 1.4;
+    }
+    .detail-block.full { grid-column: 1 / -1; }
+    .detail-block .value.italic {
+      font-style: italic; color: var(--ink-soft);
+    }
+    .detail-block .value.message {
+      font-style: italic; color: var(--ink-soft);
+      padding: 16px 20px; background: var(--cream);
+      border-left: 2px solid var(--wine);
+      font-size: 15px; line-height: 1.6;
+    }
+
+    /* Items */
+    .items { margin-top: 8px; }
+    .item-row {
+      display: flex; justify-content: space-between; align-items: baseline;
+      padding: 14px 0; border-bottom: 1px dashed var(--line);
+    }
+    .item-row:last-child { border-bottom: none; }
+    .item-name {
+      font-family: 'Cormorant Garamond', serif; font-weight: 400; font-size: 17px;
+    }
+    .item-meta {
+      font-family: 'Jost', sans-serif; font-weight: 200; font-size: 11px;
+      color: var(--ink-mute); margin-top: 2px;
+    }
+    .item-price {
+      font-family: 'Jost', sans-serif; font-weight: 300; font-size: 14px;
+      white-space: nowrap; padding-left: 16px;
+    }
+    .totals { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
+    .total-row {
+      display: flex; justify-content: space-between; padding: 6px 0;
+      font-family: 'Jost', sans-serif; font-weight: 300; font-size: 14px;
+    }
+    .total-row.grand {
+      padding-top: 16px; margin-top: 12px;
+      border-top: 1px solid var(--line);
+      align-items: baseline;
+    }
+    .grand-label {
       font-family: 'Jost', sans-serif; font-weight: 300; font-size: 10px;
-      letter-spacing: 2px; color: #1C1410; opacity: 0.5;
-      padding: 12px 16px; background: #EDE8DF; margin: 24px 0;
-      word-break: break-all;
+      letter-spacing: 4px; text-transform: uppercase; color: var(--ink-soft);
     }
+    .grand-value {
+      font-family: 'Cormorant Garamond', serif; font-weight: 400; font-size: 30px;
+      color: var(--wine);
+    }
+
+    .actions { text-align: center; margin-top: 8px; }
     a.btn {
-      display: inline-block; margin-top: 16px; padding: 14px 32px;
-      background: #6E2A38; color: #EDE8DF; text-decoration: none;
+      display: inline-block; margin: 0 8px;
+      padding: 16px 36px;
       font-family: 'Jost', sans-serif; font-weight: 300; font-size: 10px;
       letter-spacing: 4px; text-transform: uppercase;
+      text-decoration: none;
+      transition: all 0.2s;
     }
-    .divider { width: 40px; height: 1px; background: #C8818C; margin: 24px auto; }
+    a.btn-primary { background: var(--wine); color: var(--cream); }
+    a.btn-primary:hover { background: #5C2329; }
+    a.btn-secondary {
+      color: var(--wine); border: 1px solid var(--wine);
+    }
+    a.btn-secondary:hover { background: var(--wine); color: var(--cream); }
+
+    .pending-banner {
+      background: #FFF8E7; border: 1px solid #E8C97A;
+      padding: 20px 24px; margin-bottom: 24px;
+      font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 15px;
+      color: #6B4F0E; text-align: center;
+    }
+    .pending-banner strong { font-style: normal; font-weight: 500; display: block; margin-bottom: 4px; font-size: 16px; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="ornament">✿</div>
-    <div class="eyebrow">PEDIDO CONFIRMADO</div>
-    <h1>Gracias por tu pedido</h1>
-    <div class="divider"></div>
-    <p>Recibimos tu pago y empezamos a preparar tu arreglo con todo el cuidado que se merece.</p>
-    <p>Te enviaremos un mensaje muy pronto con los detalles de entrega.</p>
-    <div class="order-id" id="order-id">Cargando referencia…</div>
-    <a href="index.html" class="btn">Volver al inicio</a>
+  <div class="container">
+    <div class="hero">
+      <div class="ornament">✿</div>
+      <div class="eyebrow" id="status-eyebrow">PEDIDO CONFIRMADO</div>
+      <h1 id="status-title">Gracias por tu <em>pedido</em></h1>
+      <p class="lead" id="status-lead">Recibimos tu pago y empezamos a preparar tu arreglo con todo el cuidado que se merece.</p>
+      <p class="lead" id="status-lead-2">Te enviaremos un mensaje muy pronto con los detalles de entrega.</p>
+      <div class="divider"></div>
+      <div class="order-ref" id="order-ref">Cargando referencia…</div>
+    </div>
+
+    <div id="pending-mount"></div>
+    <div id="summary-mount"></div>
+
+    <div class="actions">
+      <a href="index.html" class="btn btn-primary">Volver al inicio</a>
+      <a href="index.html#colecciones" class="btn btn-secondary">Ver colecciones</a>
+    </div>
   </div>
+
   <script>
-    // Limpiar carrito y mostrar referencia de pago
-    try { localStorage.removeItem('flowerlab_cart'); } catch (e) {}
+    // ─── Money formatting ─────────────────────────────────────
+    const fmtMXN = (cents) => {
+      const v = (cents / 100).toFixed(2);
+      const [int, dec] = v.split('.');
+      return `$${int.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}.${dec} MXN`;
+    };
+    const escapeHtml = (s) => String(s == null ? '' : s)
+      .replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    // ─── Read URL params (Stripe redirects with payment_intent + status) ─
     const params = new URLSearchParams(window.location.search);
-    const sessionId = params.get('session_id');
-    const el = document.getElementById('order-id');
-    if (sessionId) {
-      el.textContent = 'REF: ' + sessionId;
+    const paymentIntent = params.get('payment_intent');
+    const redirectStatus = params.get('redirect_status'); // succeeded | processing | failed | requires_payment_method
+
+    // ─── Read last order from localStorage ────────────────────
+    let order = null;
+    try { order = JSON.parse(localStorage.getItem('flowerlab_last_order') || 'null'); } catch (e) {}
+
+    // ─── Status banner ────────────────────────────────────────
+    const eyebrow = document.getElementById('status-eyebrow');
+    const title = document.getElementById('status-title');
+    const lead = document.getElementById('status-lead');
+    const lead2 = document.getElementById('status-lead-2');
+    const ref = document.getElementById('order-ref');
+
+    if (redirectStatus === 'processing') {
+      // OXXO / SPEI etc. — payment pending
+      eyebrow.textContent = 'PAGO EN PROCESO';
+      title.innerHTML = 'Tu pedido está <em>casi listo</em>';
+      lead.textContent = 'Recibimos tu pedido. Cuando completes el pago en OXXO (o por transferencia), comenzaremos a preparar tu arreglo.';
+      lead2.style.display = 'none';
+      document.getElementById('pending-mount').innerHTML = `
+        <div class="pending-banner">
+          <strong>Revisa tu correo</strong>
+          Stripe te envió las instrucciones para completar el pago. Una vez pagado, te confirmaremos por WhatsApp y email.
+        </div>`;
+    } else if (redirectStatus === 'failed' || redirectStatus === 'requires_payment_method') {
+      eyebrow.textContent = 'PAGO NO COMPLETADO';
+      title.innerHTML = 'No pudimos <em>procesar</em> tu pago';
+      lead.textContent = 'Algo salió mal con la transacción. No te preocupes — no se realizó ningún cargo.';
+      lead2.innerHTML = '<a href="checkout.html" style="color: var(--wine); text-decoration: underline;">Intentar de nuevo</a>';
+    }
+
+    // Reference
+    if (paymentIntent) {
+      ref.textContent = 'REF: ' + paymentIntent;
     } else {
-      el.style.display = 'none';
+      ref.style.display = 'none';
+    }
+
+    // ─── Render order summary ─────────────────────────────────
+    if (order && order.items && order.items.length) {
+      const itemsHtml = order.items.map(it => `
+        <div class="item-row">
+          <div>
+            <div class="item-name">${escapeHtml(it.name)}</div>
+            <div class="item-meta">${escapeHtml(it.size || '')} ${it.qty > 1 ? '· ×' + it.qty : ''}</div>
+          </div>
+          <div class="item-price">${fmtMXN(it.price * 100 * it.qty)}</div>
+        </div>`).join('');
+
+      const a = order.shipping_address || {};
+      const addressLine = [a.line1, a.line2, a.city, a.state, a.postal_code]
+        .filter(x => x && x.trim()).join(', ');
+
+      const detailsHtml = `
+        <div class="detail-grid">
+          <div class="detail-block">
+            <div class="label">Destinatario</div>
+            <div class="value">${escapeHtml(order.recipient_name)}</div>
+            ${order.recipient_phone ? `<div class="value italic" style="font-size: 14px; margin-top: 4px;">${escapeHtml(order.recipient_phone)}</div>` : ''}
+          </div>
+          <div class="detail-block">
+            <div class="label">De parte de</div>
+            <div class="value">${escapeHtml(order.sender_name || order.customer_name)}</div>
+          </div>
+          <div class="detail-block full">
+            <div class="label">Dirección de entrega</div>
+            <div class="value italic">${escapeHtml(addressLine)}</div>
+          </div>
+          <div class="detail-block">
+            <div class="label">Fecha</div>
+            <div class="value">${formatDate(order.delivery_date)}</div>
+          </div>
+          <div class="detail-block">
+            <div class="label">Horario</div>
+            <div class="value">${escapeHtml(order.delivery_time)}</div>
+          </div>
+          ${order.card_message ? `
+          <div class="detail-block full">
+            <div class="label">Mensaje de la tarjeta</div>
+            <div class="value message">${escapeHtml(order.card_message)}</div>
+          </div>` : ''}
+          ${order.special_instructions ? `
+          <div class="detail-block full">
+            <div class="label">Instrucciones especiales</div>
+            <div class="value italic">${escapeHtml(order.special_instructions)}</div>
+          </div>` : ''}
+        </div>
+      `;
+
+      const totalsHtml = `
+        <div class="totals">
+          <div class="total-row"><span>Subtotal</span><span>${fmtMXN(order.subtotal)}</span></div>
+          <div class="total-row"><span>Envío</span><span>${fmtMXN(order.shipping_amount)}</span></div>
+          <div class="total-row grand">
+            <span class="grand-label">Total pagado</span>
+            <span class="grand-value">${fmtMXN(order.total)}</span>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('summary-mount').innerHTML = `
+        <div class="summary-card">
+          <h2>Detalles del pedido</h2>
+          ${detailsHtml}
+        </div>
+        <div class="summary-card">
+          <h2>Tu arreglo</h2>
+          <div class="items">${itemsHtml}</div>
+          ${totalsHtml}
+        </div>
+      `;
+    }
+
+    function formatDate(iso) {
+      if (!iso) return '—';
+      try {
+        const d = new Date(iso + 'T12:00:00');
+        return d.toLocaleDateString('es-MX', {
+          weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+        });
+      } catch { return iso; }
+    }
+
+    // ─── Cleanup carrito tras pago exitoso ────────────────────
+    if (redirectStatus === 'succeeded' || redirectStatus === 'processing') {
+      try { localStorage.removeItem('flowerlab_cart'); } catch (e) {}
     }
   </script>
 </body>
