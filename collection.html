@@ -293,37 +293,10 @@
 
       const [payLoading, setPayLoading] = useState(false);
 
-      const handlePay = async () => {
-        setPayLoading(true);
-        try {
-          const res = await fetch(STRIPE_API_ENDPOINT, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              items: items.map(i => ({
-                name: i.name,
-                description: i.size,
-                quantity: i.qty,
-                unit_amount: i.price * 100, // Stripe usa centavos
-              })),
-              shipping_amount: 99 * 100,
-              currency: 'mxn',
-              success_url: window.location.origin + '/success.html?session_id={CHECKOUT_SESSION_ID}',
-              cancel_url: window.location.href,
-            }),
-          });
-          if (!res.ok) throw new Error('Server error: ' + res.status);
-          const data = await res.json();
-          if (data.url) {
-            window.location.href = data.url;
-          } else {
-            throw new Error(data.error || 'No se recibió URL de pago');
-          }
-        } catch (err) {
-          console.error(err);
-          alert('No se pudo iniciar el pago. Por favor intenta de nuevo o contáctanos.\n\n' + err.message);
-          setPayLoading(false);
-        }
+      const handlePay = () => {
+        // El carrito ya se persiste en localStorage automáticamente.
+        // Solo redirigimos al checkout custom.
+        window.location.href = '/checkout.html';
       };
 
       return (
@@ -348,7 +321,6 @@
             <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }}>
               {items.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '60px 0' }}>
-                  <div style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', fontSize: 48, color: C.blushPale, marginBottom: 16 }}>✿</div>
                   <p style={{ fontFamily: "'Jost', sans-serif", fontWeight: 200, fontSize: 12, letterSpacing: 2, color: C.ink, opacity: 0.4 }}>Agrega arreglos para comenzar</p>
                 </div>
               ) : (
