@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Flower Lab · Checkout</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet" />
+  <script src="https://js.stripe.com/v3/"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --cream: #EDE8DF;
+      --wine: #6E2A38;
+      --wine-deep: #5C2329;
+      --rose: #DAAEB5;
+      --rose-soft: #C8818C;
+      --ink: #1C1410;
+      --ink-soft: #3D3028;
+      --ink-mute: #8A7C73;
+      --line: rgba(110,42,56,0.15);
+      --error: #C0392B;
+    }
+    body {
+      background: var(--cream); color: var(--ink);
+      font-family: 'Jost', sans-serif; font-weight: 300;
+      min-height: 100vh; line-height: 1.5;
+    }
+    /* ─── Top Bar ─────────────────────────────────────────────── */
+    .topbar {
+      position: sticky; top: 0; z-index: 50;
+      background: var(--cream);
+      border-bottom: 1px solid var(--line);
+      padding: 18px 40px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .brand {
+      font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 300;
+      font-size: 22px; color: var(--wine); letter-spacing: 1px;
+      text-decoration: none;
+    }
+    .brand small {
+      font-family: 'Jost', sans-serif; font-style: normal; font-weight: 200;
+      font-size: 8px; letter-spacing: 4px; display: block;
+      color: var(--wine); opacity: 0.7; margin-top: -2px;
+    }
+    .secure-badge {
+      font-family: 'Jost', sans-serif; font-weight: 300; font-size: 9px;
+      letter-spacing: 3px; color: var(--ink-soft); opacity: 0.7;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .secure-badge svg { width: 12px; height: 12px; }
+
+    /* ─── Layout ─────────────────────────────────────────────── */
+    .page {
+      max-width: 1280px; margin: 0 auto;
+      display: grid; grid-template-columns: 1fr 420px;
+      gap: 48px; padding: 48px 40px 80px;
+    }
+    @media (max-width: 900px) {
+      .page { grid-template-columns: 1fr; padding: 32px 20px; gap: 32px; }
+    }
+
+    /* ─── Sections ───────────────────────────────────────────── */
+    .section {
+      background: #fff;
+      padding: 36px 40px;
+      margin-bottom: 24px;
+      border: 1px solid var(--line);
+    }
+    .section-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--wine); color: var(--cream);
+      font-family: 'Cormorant Garamond', serif; font-weight: 400; font-size: 14px;
+      margin-right: 12px;
+    }
+    .section-header {
+      display: flex; align-items: center; margin-bottom: 24px;
+      flex-wrap: nowrap;
+    }
+    .section-title {
+      font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 26px;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+    .section-sub {
+      font-family: 'Cormorant Garamond', serif; font-style: italic;
+      font-size: 14px; color: var(--ink-mute);
+      margin: -16px 0 24px 40px;
+    }
+
+    /* ─── Form ───────────────────────────────────────────────── */
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .row-3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .field { margin-bottom: 16px; }
+    label {
+      display: block;
+      font-family: 'Jost', sans-serif; font-weight: 300; font-size: 9px;
+      letter-spacing: 3px; text-transform: uppercase;
+      color: var(--ink-soft); margin-bottom: 8px;
+    }
+    label .req { color: var(--wine); margin-left: 4px; }
+    label .opt {
+      color: var(--ink-mute); font-weight: 200; letter-spacing: 1px;
+      text-transform: none; margin-left: 6px; font-size: 10px;
+    }
+    input[type=text], input[type=email], input[type=tel], input[type=date], select, textarea {
+      width: 100%;
+      padding: 14px 14px;
+      background: var(--cream);
+      border: 1px solid transparent;
+      border-bottom: 1px solid var(--line);
+      font-family: 'Jost', sans-serif; font-weight: 300; font-size: 14px;
+      color: var(--ink);
+      transition: border-color 0.2s, background 0.2s;
+      border-radius: 0;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--wine);
+      background: #fff;
+    }
+    textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
+    .char-count {
+      font-family: 'Jost', sans-serif; font-weight: 300; font-size: 10px;
+      letter-spacing: 1px; color: var(--ink-mute);
+      margin-top: 6px; text-align: right;
+    }
+    .char-count.warn { color: #C8861C; }
+    .char-count.over { color: var(--error); font-weight: 400; }
+    .anon-toggle {
+      display: flex; align-items: center; gap: 10px;
+      margin-top: -8px; margin-bottom: 16px;
+      cursor: pointer; user-select: none;
+    }
+    .anon-toggle input { width: 16px; height: 16px; accent-color: var(--wine); }
+    .anon-toggle span {
+      font-family: 'Cormorant Garamond', serif; font-style: italic;
+      font-size: 14px; color: var(--ink-soft);
+    }
+
+    /* ─── Time slot pills ────────────────────────────────────── */
+    .time-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .time-slot {
+      padding: 16px 12px; text-align: center;
+      background: var(--cream);
+      border: 1px solid var(--line);
+      cursor: pointer; transition: all 0.2s;
+      font-family: 'Jost', sans-serif; font-weight: 300; font-size: 11px;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--ink-soft);
+    }
+    .time-slot .label-big {
+      display: block;
+      font-family: 'Cormorant Garamond', serif; font-style: italic;
+      font-size: 18px; letter-spacing: 0; text-transform: none;
+      color: var(--wine); margin-bottom: 4px;
+      font-weight: 400;
+    }
+    .time-slot:hover { border-color: var(--wine); }
+    .time-slot.active {
+      background: var(--wine); color: var(--cream);
+      border-color: var(--wine);
+    }
+    .time-slot.active .label-big { color: var(--cream); }
+
+    /* ─── Stripe Elements wrapper ────────────────────────────── */
+    #payment-element {
+      padding: 20px;
+      background: var(--cream);
+      border: 1px solid var(--line);
+      min-height: 280px;
+    }
+    .pay-error {
+      margin-top: 12px;
+      font-family: 'Jost', sans-serif; font-weight: 300; font-size: 13px;
+      color: var(--error);
+    }
+
+    /* ─── Order Summary (right side) ─────────────────────────── */
+    .summary {
+      background: var(--wine);
+      color: var(--cream);
+      padding: 36px 32px;
+      position: sticky; top: 90px;
+      align-self: start;
+    }
+    .summary h2 {
+      font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 24px;
+      margin-bottom: 6px;
+    }
+    .summary .eyebrow {
+      font-family: 'Jost', sans-serif; font-weight: 200; font-size: 8px;
+      letter-spacing: 5px; opacity: 0.7; margin-bottom: 24px;
+    }
+    .summary-divider { height: 1px; background: rgba(255,255,255,0.15); margin: 20px 0; }
+    .item {
+      display: flex; gap: 14px; margin-bottom: 18px;
+      align-items: flex-start;
+    }
+    .item-img {
+      width: 56px; height: 72px;
+      background: var(--rose); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 26px;
+      color: var(--wine-deep);
+      overflow: hidden;
+    }
+    .item-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .item-info { flex: 1; min-width: 0; }
+    .item-name {
+      font-family: 'Cormorant Garamond', serif; font-weight: 400; font-size: 16px;
+      line-height: 1.3; margin-bottom: 4px;
+    }
+    .item-meta {
+      font-family: 'Jost', sans-serif; font-weight: 200; font-size: 11px;
+      opacity: 0.65; letter-spacing: 0.5px;
+    }
+    .item-price {
+      font-family: 'Jost', sans-serif; font-weight: 300; font-size: 13px;
+      white-space: nowrap;
+    }
+    .totals { margin-top: 16px; }
+    .total-row {
+      display: flex; justify-content: space-between; padding: 6px 0;
+      font-family: 'Jost', sans-serif; font-weight: 300; font-size: 13px;
+    }
+    .total-row.grand {
+      padding-top: 18px; margin-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.15);
+      align-items: baseline;
+    }
+    .grand-label {
+      font-family: 'Jost', sans-serif; font-weight: 200; font-size: 9px;
+      letter-spacing: 5px;
+    }
+    .grand-value {
+      font-family: 'Cormorant Garamond', serif; font-weight: 400; font-size: 30px;
+    }
+    .grand-currency {
+      font-family: 'Jost', sans-serif; font-weight: 300; font-size: 13px;
+      letter-spacing: 2px; opacity: 0.7; margin-left: 6px;
+    }
+
+    /* ─── Submit button ─────────────────────────────────────── */
+    .pay-btn {
+      width: 100%;
+      margin-top: 16px;
+      padding: 22px;
+      background: var(--wine); color: var(--cream);
+      border: none; cursor: pointer;
+      font-family: 'Jost', sans-serif; font-weight: 300; font-size: 11px;
+      letter-spacing: 6px; text-transform: uppercase;
+      transition: background 0.2s;
+    }
+    .pay-btn:hover:not(:disabled) { background: var(--wine-deep); }
+    .pay-btn:disabled { background: var(--ink-mute); cursor: not-allowed; opacity: 0.6; }
+
+    .empty {
+      text-align: center; padding: 80px 20px;
+      max-width: 480px; margin: 0 auto;
+    }
+    .empty h1 {
+      font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 36px;
+      margin-bottom: 16px;
+    }
+    .empty p {
+      font-family: 'Cormorant Garamond', serif; font-style: italic;
+      font-size: 16px; color: var(--ink-soft); margin-bottom: 32px;
+    }
+    .empty a {
+      display: inline-block; padding: 14px 32px;
+      background: var(--wine); color: var(--cream); text-decoration: none;
+      font-family: 'Jost', sans-serif; font-size: 10px; letter-spacing: 4px;
+      text-transform: uppercase;
+    }
+    .loader {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid currentColor; border-right-color: transparent;
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+      margin-right: 10px; vertical-align: -2px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <a href="index.html" class="brand">
+      The Flower Lab
+      <small>FLORERÍA · CDMX</small>
+    </a>
+    <div class="secure-badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="11" width="18" height="11" rx="2"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+      PAGO SEGURO · STRIPE
+    </div>
+  </div>
+
+  <div class="page" id="page">
+    <!-- Loading state until JS hydrates -->
+    <div></div>
+  </div>
+
+  <script>
+    // ─── Config ───────────────────────────────────────────────
+    const STRIPE_PUBLISHABLE_KEY = 'pk_test_51TSNhN0S1K9srkOHW1bfhBkhYrx0GX6IEKew0uDtUZKQvvyvM1AuRzhqrtjY3Am80iviXiXiuk7mSR1RrzYu5Yfr00jND0b6wS';
+    const PAYMENT_INTENT_ENDPOINT = '/api/create-payment-intent';
+    const SHIPPING_AMOUNT = 9900; // 99 MXN in cents
+
+    // ─── Money formatting (Mexican format: $1,899.00 MXN) ────
+    const fmtMXN = (cents) => {
+      const v = (cents / 100).toFixed(2);
+      // Add thousands separator (comma)
+      const [int, dec] = v.split('.');
+      const withCommas = int.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      return `$${withCommas}.${dec} MXN`;
+    };
+
+    // ─── Read cart ────────────────────────────────────────────
+    let cart = [];
+    try { cart = JSON.parse(localStorage.getItem('flowerlab_cart') || '[]'); } catch (e) {}
+
+    const page = document.getElementById('page');
+
+    if (!cart.length) {
+      page.innerHTML = `
+        <div class="empty" style="grid-column: 1 / -1;">
+          <h1>Tu carrito está vacío</h1>
+          <p>Vuelve a las colecciones para descubrir nuestros arreglos.</p>
+          <a href="index.html">Ver Colecciones</a>
+        </div>`;
+    } else {
+      renderCheckout();
+    }
+
+    function renderCheckout() {
+      const subtotal = cart.reduce((s, i) => s + i.price * 100 * i.qty, 0);
+      const total = subtotal + SHIPPING_AMOUNT;
+
+      page.innerHTML = `
+        <!-- LEFT: Form -->
+        <div>
+          <!-- 1. Sender / Customer -->
+          <div class="section">
+            <div class="section-header">
+              <span class="section-num">1</span>
+              <span class="section-title">Datos del remitente</span>
+            </div>
+            <div class="row">
+              <div class="field">
+                <label>Tu nombre <span class="req">*</span></label>
+                <input type="text" id="customer_name" placeholder="Como aparecerá en la tarjeta" required />
+              </div>
+              <div class="field">
+                <label>Tu correo <span class="req">*</span></label>
+                <input type="email" id="customer_email" placeholder="para enviarte el comprobante" required />
+              </div>
+            </div>
+            <div class="field">
+              <label>Tu teléfono <span class="req">*</span></label>
+              <input type="tel" id="customer_phone" placeholder="55 1234 5678" required />
+            </div>
+            <label class="anon-toggle">
+              <input type="checkbox" id="anonymous" />
+              <span>Enviar como anónimo (no mostrar mi nombre al destinatario)</span>
+            </label>
+          </div>
+
+          <!-- 2. Recipient -->
+          <div class="section">
+            <div class="section-header">
+              <span class="section-num">2</span>
+              <span class="section-title">Para quién</span>
+            </div>
+            <div class="row">
+              <div class="field">
+                <label>Nombre del destinatario <span class="req">*</span></label>
+                <input type="text" id="recipient_name" placeholder="¿Quién recibe las flores?" required />
+              </div>
+              <div class="field">
+                <label>Teléfono del destinatario <span class="opt">opcional</span></label>
+                <input type="tel" id="recipient_phone" placeholder="por si el repartidor necesita llamar" />
+              </div>
+            </div>
+            <div class="field">
+              <label>Mensaje de la tarjeta <span class="opt">opcional</span></label>
+              <textarea id="card_message" maxlength="300" placeholder="Escribe el mensaje que acompañará el arreglo&#10;&#10;Hola mi vida, gracias por tantos momentos juntos…"></textarea>
+              <div class="char-count" id="char-count">0 / 300</div>
+            </div>
+          </div>
+
+          <!-- 3. Address -->
+          <div class="section">
+            <div class="section-header">
+              <span class="section-num">3</span>
+              <span class="section-title">Dirección de entrega</span>
+            </div>
+            <div class="section-sub">Solo entregamos en CDMX y Estado de México</div>
+            <div class="field">
+              <label>Calle y número <span class="req">*</span></label>
+              <input type="text" id="line1" placeholder="Av. Reforma 100" required />
+            </div>
+            <div class="field">
+              <label>Colonia, interior, referencias <span class="opt">opcional</span></label>
+              <input type="text" id="line2" placeholder="Col. Juárez · Depto 4B · Edificio azul" />
+            </div>
+            <div class="row-3">
+              <div class="field">
+                <label>Ciudad <span class="req">*</span></label>
+                <input type="text" id="city" placeholder="Ciudad de México" required />
+              </div>
+              <div class="field">
+                <label>Estado <span class="req">*</span></label>
+                <select id="state" required>
+                  <option value="">Elegir…</option>
+                  <option value="Ciudad de México">CDMX</option>
+                  <option value="Estado de México">EdoMex</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>C.P. <span class="req">*</span></label>
+                <input type="text" id="postal_code" placeholder="06600" maxlength="5" required />
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Delivery time -->
+          <div class="section">
+            <div class="section-header">
+              <span class="section-num">4</span>
+              <span class="section-title">Día y hora de entrega</span>
+            </div>
+            <div class="section-sub">Entregas el mismo día si pides antes de las 12:00 pm</div>
+            <div class="row">
+              <div class="field">
+                <label>Fecha de entrega <span class="req">*</span></label>
+                <input type="date" id="delivery_date" required />
+              </div>
+              <div class="field">
+                <label>Horario <span class="req">*</span></label>
+                <input type="hidden" id="delivery_time" required />
+                <div class="time-slots" id="time-slots">
+                  <div class="time-slot" data-time="Mañana (9-12)">
+                    <span class="label-big">Mañana</span>
+                    9 — 12 hrs
+                  </div>
+                  <div class="time-slot" data-time="Tarde (12-17)">
+                    <span class="label-big">Tarde</span>
+                    12 — 17 hrs
+                  </div>
+                  <div class="time-slot" data-time="Noche (17-20)">
+                    <span class="label-big">Noche</span>
+                    17 — 20 hrs
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="field">
+              <label>Instrucciones especiales <span class="opt">opcional</span></label>
+              <textarea id="special_instructions" maxlength="500" placeholder="Sorpresa, no tocar el timbre · Dejar con el portero · Llamar al llegar…" style="min-height: 80px;"></textarea>
+            </div>
+          </div>
+
+          <!-- 5. Payment -->
+          <div class="section">
+            <div class="section-header">
+              <span class="section-num">5</span>
+              <span class="section-title">Método de pago</span>
+            </div>
+            <div class="section-sub">Tarjeta de crédito/débito · OXXO · transferencia</div>
+            <div id="payment-element">
+              <div style="text-align:center; padding: 80px 20px; color: var(--ink-mute); font-family: 'Cormorant Garamond', serif; font-style: italic;">
+                <span class="loader" style="border-color: var(--wine); border-right-color: transparent;"></span>
+                Cargando opciones de pago…
+              </div>
+            </div>
+            <div class="pay-error" id="pay-error"></div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Summary -->
+        <div>
+          <div class="summary">
+            <div class="eyebrow">RESUMEN DEL PEDIDO</div>
+            <h2>Tu arreglo</h2>
+            <div class="summary-divider"></div>
+            <div id="items-list"></div>
+            <div class="totals">
+              <div class="total-row"><span>Subtotal</span><span>${fmtMXN(subtotal)}</span></div>
+              <div class="total-row"><span>Envío</span><span>${fmtMXN(SHIPPING_AMOUNT)}</span></div>
+              <div class="total-row grand">
+                <span class="grand-label">TOTAL</span>
+                <span><span class="grand-value">$${(total/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',').replace('.00','')}<span style="opacity:0.5">.${((total/100).toFixed(2)).split('.')[1]}</span></span><span class="grand-currency">MXN</span></span>
+              </div>
+            </div>
+            <button class="pay-btn" id="pay-btn">Pagar ${fmtMXN(total)}</button>
+            <div style="font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 12px; opacity: 0.6; text-align: center; margin-top: 16px;">
+              Pago procesado de forma segura por Stripe
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Render items
+      const itemsHtml = cart.map((it) => `
+        <div class="item">
+          <div class="item-img">${it.img
+            ? `<img src="${escapeHtml(it.img)}" alt="${escapeHtml(it.name)}" style="width:100%;height:100%;object-fit:cover;display:block;" />`
+            : (it.name?.[0] || '✿')}</div>
+          <div class="item-info">
+            <div class="item-name">${escapeHtml(it.name || 'Arreglo')}</div>
+            <div class="item-meta">${escapeHtml(it.size || '')} ${it.qty > 1 ? '· ×' + it.qty : ''}</div>
+          </div>
+          <div class="item-price">${fmtMXN(it.price * 100 * it.qty)}</div>
+        </div>
+      `).join('');
+      document.getElementById('items-list').innerHTML = itemsHtml;
+
+      hookUpForm(total);
+      initStripe(total);
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    // ─── Form behavior ────────────────────────────────────────
+    function hookUpForm(total) {
+      // Char counter
+      const msg = document.getElementById('card_message');
+      const counter = document.getElementById('char-count');
+      msg.addEventListener('input', () => {
+        const len = msg.value.length;
+        counter.textContent = `${len} / 300`;
+        counter.classList.toggle('warn', len > 250 && len <= 300);
+        counter.classList.toggle('over', len > 300);
+      });
+
+      // Anonymous toggle
+      const anon = document.getElementById('anonymous');
+      const customerName = document.getElementById('customer_name');
+      anon.addEventListener('change', () => {
+        if (anon.checked) {
+          customerName.dataset.original = customerName.value;
+          customerName.value = '';
+          customerName.placeholder = 'Anónimo (no se mostrará al destinatario)';
+        } else {
+          customerName.value = customerName.dataset.original || '';
+          customerName.placeholder = 'Como aparecerá en la tarjeta';
+        }
+      });
+
+      // Time slot pills
+      const slots = document.querySelectorAll('.time-slot');
+      const timeInput = document.getElementById('delivery_time');
+      slots.forEach(s => {
+        s.addEventListener('click', () => {
+          slots.forEach(x => x.classList.remove('active'));
+          s.classList.add('active');
+          timeInput.value = s.dataset.time;
+        });
+      });
+
+      // Min date (today, or tomorrow if past noon)
+      const dateInput = document.getElementById('delivery_date');
+      const now = new Date();
+      const minDate = new Date();
+      if (now.getHours() >= 12) minDate.setDate(minDate.getDate() + 1);
+      dateInput.min = minDate.toISOString().split('T')[0];
+      dateInput.value = minDate.toISOString().split('T')[0];
+    }
+
+    // ─── Stripe Elements ──────────────────────────────────────
+    let stripe, elements;
+
+    async function initStripe(amount) {
+      if (STRIPE_PUBLISHABLE_KEY === 'pk_test_REPLACE_ME') {
+        document.getElementById('payment-element').innerHTML = `
+          <div style="text-align:center; padding: 40px 20px; color: var(--error); font-family: 'Cormorant Garamond', serif;">
+            ⚠️ Falta configurar la <code>STRIPE_PUBLISHABLE_KEY</code> en <code>checkout.html</code>
+          </div>`;
+        return;
+      }
+
+      stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+
+      // Create PaymentIntent on the server
+      try {
+        const items = cart.map(i => ({
+          name: i.name,
+          unit_amount: i.price * 100,
+          quantity: i.qty,
+        }));
+        const res = await fetch(PAYMENT_INTENT_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items,
+            shipping_amount: SHIPPING_AMOUNT,
+            currency: 'mxn',
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || `HTTP ${res.status}`);
+        }
+        const { clientSecret } = await res.json();
+
+        elements = stripe.elements({
+          clientSecret,
+          locale: 'es',
+          appearance: {
+            theme: 'flat',
+            variables: {
+              colorPrimary: '#6E2A38',
+              colorBackground: '#EDE8DF',
+              colorText: '#1C1410',
+              colorDanger: '#C0392B',
+              fontFamily: 'Jost, system-ui, sans-serif',
+              spacingUnit: '4px',
+              borderRadius: '0px',
+              fontSizeBase: '14px',
+            },
+            rules: {
+              '.Input': {
+                border: '1px solid rgba(110,42,56,0.15)',
+                padding: '12px 14px',
+                boxShadow: 'none',
+              },
+              '.Input:focus': {
+                border: '1px solid #6E2A38',
+                boxShadow: 'none',
+              },
+              '.Label': {
+                fontFamily: 'Jost, sans-serif',
+                fontSize: '9px',
+                fontWeight: '300',
+                letterSpacing: '3px',
+                textTransform: 'uppercase',
+                color: '#3D3028',
+              },
+              '.Tab': {
+                border: '1px solid rgba(110,42,56,0.15)',
+                boxShadow: 'none',
+                padding: '12px',
+              },
+              '.Tab--selected': {
+                border: '1px solid #6E2A38',
+                backgroundColor: '#fff',
+              },
+            },
+          },
+        });
+
+        const paymentElement = elements.create('payment', {
+          layout: 'tabs',
+        });
+        document.getElementById('payment-element').innerHTML = '';
+        paymentElement.mount('#payment-element');
+      } catch (err) {
+        console.error(err);
+        document.getElementById('payment-element').innerHTML = `
+          <div style="text-align:center; padding: 40px 20px; color: var(--error); font-family: 'Cormorant Garamond', serif;">
+            No pudimos cargar los métodos de pago. Por favor recarga la página.<br>
+            <small style="opacity:0.6">${escapeHtml(err.message)}</small>
+          </div>`;
+      }
+
+      // Pay button handler
+      document.getElementById('pay-btn').addEventListener('click', handlePay);
+    }
+
+    // ─── Form validation ──────────────────────────────────────
+    function validate() {
+      const required = [
+        ['customer_name', 'tu nombre'],
+        ['customer_email', 'tu correo'],
+        ['customer_phone', 'tu teléfono'],
+        ['recipient_name', 'el nombre del destinatario'],
+        ['line1', 'la calle y número'],
+        ['city', 'la ciudad'],
+        ['state', 'el estado'],
+        ['postal_code', 'el código postal'],
+        ['delivery_date', 'la fecha de entrega'],
+        ['delivery_time', 'el horario de entrega'],
+      ];
+      const anon = document.getElementById('anonymous').checked;
+      for (const [id, label] of required) {
+        // Skip customer_name validation if anonymous
+        if (anon && id === 'customer_name') continue;
+        const el = document.getElementById(id);
+        if (!el.value.trim()) {
+          el.focus();
+          el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          showError(`Por favor completa ${label}.`);
+          return false;
+        }
+      }
+      const email = document.getElementById('customer_email').value;
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showError('Por favor revisa tu correo electrónico.');
+        return false;
+      }
+      const cp = document.getElementById('postal_code').value;
+      if (!/^\d{5}$/.test(cp)) {
+        showError('El código postal debe tener 5 dígitos.');
+        return false;
+      }
+      const msg = document.getElementById('card_message').value;
+      if (msg.length > 300) {
+        showError('El mensaje de la tarjeta no puede exceder 300 caracteres.');
+        return false;
+      }
+      return true;
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('pay-error');
+      el.textContent = msg;
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+
+    // ─── Pay handler ──────────────────────────────────────────
+    async function handlePay() {
+      if (!validate()) return;
+      if (!stripe || !elements) {
+        showError('El sistema de pago no está listo. Recarga la página.');
+        return;
+      }
+      const btn = document.getElementById('pay-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loader"></span>Procesando…';
+      showError('');
+
+      // Update PaymentIntent with metadata before confirming
+      const data = collectFormData();
+      try {
+        // Attach metadata via PUT to a metadata endpoint (optional optimization).
+        // Simpler approach: pass form data straight into confirmPayment params,
+        // and persist data to localStorage so success page can show it.
+        localStorage.setItem('flowerlab_last_order', JSON.stringify({
+          ...data,
+          items: cart,
+          shipping_amount: SHIPPING_AMOUNT,
+          subtotal: cart.reduce((s, i) => s + i.price * 100 * i.qty, 0),
+          total: cart.reduce((s, i) => s + i.price * 100 * i.qty, 0) + SHIPPING_AMOUNT,
+          timestamp: new Date().toISOString(),
+        }));
+
+        const { error } = await stripe.confirmPayment({
+          elements,
+          confirmParams: {
+            return_url: window.location.origin + '/success.html',
+            receipt_email: data.customer_email,
+            payment_method_data: {
+              billing_details: {
+                name: data.customer_name || data.recipient_name,
+                email: data.customer_email,
+                phone: data.customer_phone,
+                address: {
+                  line1: data.shipping_address.line1,
+                  line2: data.shipping_address.line2 || undefined,
+                  city: data.shipping_address.city,
+                  state: data.shipping_address.state,
+                  postal_code: data.shipping_address.postal_code,
+                  country: 'MX',
+                },
+              },
+            },
+            shipping: {
+              name: data.recipient_name,
+              phone: data.recipient_phone || data.customer_phone,
+              address: {
+                line1: data.shipping_address.line1,
+                line2: data.shipping_address.line2 || undefined,
+                city: data.shipping_address.city,
+                state: data.shipping_address.state,
+                postal_code: data.shipping_address.postal_code,
+                country: 'MX',
+              },
+            },
+          },
+        });
+
+        if (error) {
+          showError(error.message || 'No se pudo procesar el pago.');
+          btn.disabled = false;
+          btn.innerHTML = `Pagar ${fmtMXN(parseInt(localStorage.getItem('flowerlab_total_cents') || '0'))}`;
+          // Reset button text properly
+          const total = cart.reduce((s, i) => s + i.price * 100 * i.qty, 0) + SHIPPING_AMOUNT;
+          btn.innerHTML = `Pagar ${fmtMXN(total)}`;
+        }
+      } catch (err) {
+        console.error(err);
+        showError(err.message || 'Error procesando el pago.');
+        btn.disabled = false;
+        const total = cart.reduce((s, i) => s + i.price * 100 * i.qty, 0) + SHIPPING_AMOUNT;
+        btn.innerHTML = `Pagar ${fmtMXN(total)}`;
+      }
+    }
+
+    function collectFormData() {
+      const anon = document.getElementById('anonymous').checked;
+      return {
+        customer_name: anon ? 'Anónimo' : document.getElementById('customer_name').value.trim(),
+        customer_email: document.getElementById('customer_email').value.trim(),
+        customer_phone: document.getElementById('customer_phone').value.trim(),
+        sender_name: anon ? 'Anónimo' : document.getElementById('customer_name').value.trim(),
+        recipient_name: document.getElementById('recipient_name').value.trim(),
+        recipient_phone: document.getElementById('recipient_phone').value.trim(),
+        card_message: document.getElementById('card_message').value.trim(),
+        delivery_date: document.getElementById('delivery_date').value,
+        delivery_time: document.getElementById('delivery_time').value,
+        special_instructions: document.getElementById('special_instructions').value.trim(),
+        shipping_address: {
+          line1: document.getElementById('line1').value.trim(),
+          line2: document.getElementById('line2').value.trim(),
+          city: document.getElementById('city').value.trim(),
+          state: document.getElementById('state').value,
+          postal_code: document.getElementById('postal_code').value.trim(),
+        },
+      };
+    }
+  </script>
+</body>
+</html>

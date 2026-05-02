@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Flower Lab · Colección</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@200;300;400&display=swap" rel="stylesheet" />
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: #EDE8DF;
+      color: #1C1410;
+      font-family: 'Jost', sans-serif;
+      font-weight: 300;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    #root { min-height: 100vh; }
+    ::selection { background: #DAAEB5; color: #6E2A38; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #EDE8DF; }
+    ::-webkit-scrollbar-thumb { background: #C8818C; border-radius: 2px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    const C = {
+      cream: '#EDE8DF', creamDark: '#E0D9CE',
+      blushPale: '#DAAEB5', blush: '#C8818C', blushDeep: '#A5606B',
+      sage: '#5C6E4A', sageLight: '#A3B391',
+      wine: '#6E2A38', gold: '#B8994E',
+      ink: '#1C1410', inkSoft: '#3D3028',
+    };
+
+    // ─── Stripe Config ────────────────────────────────────────────
+    // Backend que crea una Checkout Session de Stripe y devuelve { url }.
+    // En producción Vercel: '/api/create-checkout-session'
+    // En local: 'http://localhost:3000/api/create-checkout-session'
+    const STRIPE_API_ENDPOINT = '/api/create-checkout-session';
+
+    const COLLECTIONS = [
+      { id: 'condolencias', name: 'Condolencias', tagline: 'Con profundo respeto', desc: 'Arreglos serenos y dignos, compuestos para acompañar en los momentos más difíciles. Blancos, verdes y tonos suaves que transmiten paz.', flowers: 'Lilium blanco · Rosa blanca · Crisantemo · Eucalipto', price: 'desde $1,200', accent: '#5C6E4A', accentLight: '#D6DFD0', bg: '#EEF2EB' },
+      { id: 'amor', name: 'Amor & Aniversario', tagline: 'Dramático y eterno', desc: 'Composiciones voluminosas y sensuales para celebrar el amor. Tonos profundos, pétalos en capas, y flores que se sienten como couture.', flowers: 'Rosa roja · Peonía · Ranunculus · Anemone negra', price: 'desde $1,800', accent: '#6E2A38', accentLight: '#F0DDE0', bg: '#F5E8EA' },
+      { id: 'gender-reveal', name: 'Baby on the Way', tagline: 'La gran revelación', desc: 'Arreglos lúdicos y festivos cargados de sorpresa. Disponibles en paleta rosa o azul, con elementos que dramatizan el momento.', flowers: "Hortensia · Baby's breath · Tulipán · Ranunculus", price: 'desde $1,400', accent: '#9E8B7A', accentLight: '#EDE5DC', bg: '#F5F0EA' },
+      { id: 'bride', name: 'Bride to Be', tagline: 'Sublime y nupcial', desc: 'Para la novia antes del gran día. Blanco puro, verde delicado, y ese toque de lujo botánico que lo hace inolvidable.', flowers: 'Rosa garden blanca · Gypsophila · Eucalipto · Peonía', price: 'desde $2,200', accent: '#DAAEB5', accentLight: '#F5EEF0', bg: '#FAF5F6' },
+      { id: 'graduacion', name: 'Graduación', tagline: 'Un logro que florece', desc: 'Composiciones alegres y aspiracionales para celebrar el esfuerzo. Coloridas, estructuradas, y listas para la foto.', flowers: 'Girasol · Protea · Solidago · Rosa salmón', price: 'desde $1,100', accent: '#B8994E', accentLight: '#F5EDD6', bg: '#FAF3E0' },
+      { id: 'cumpleanos', name: 'Cumpleaños', tagline: 'Vivo y celebratorio', desc: 'El regalo que nadie espera pero todos desean. Arreglos llenos de personalidad, volumen y color que hacen el momento.', flowers: 'Rosa garden · Ranunculus · Anemone · Snapdragon', price: 'desde $900', accent: '#A5606B', accentLight: '#F2E2E4', bg: '#F8ECED' },
+      { id: 'agradecimientos', name: 'Agradecimientos', tagline: 'Gratitud hecha flor', desc: 'Elegante y considerado. Para decir gracias de una manera que no se olvida. Sutiles, fragantes, y siempre bien recibidos.', flowers: 'Tulipán · Lavanda · Eucalipto · Rosa nude', price: 'desde $800', accent: '#A3B391', accentLight: '#EAF0E5', bg: '#F1F5EE' },
+      { id: 'menos900', name: 'Regalos por menos de $900', tagline: 'Accesible y hermoso', desc: 'Porque el lujo botánico no tiene que costar una fortuna. Arreglos cuidadosamente compuestos, con el mismo ojo editorial, a un precio accesible.', flowers: 'Rosa · Clavel · Crisantemo · Follaje', price: 'desde $500', accent: '#8B7355', accentLight: '#EDE8DE', bg: '#F5F1EB' },
+      { id: 'bolos', name: 'Bolos', tagline: 'Para llevar y regalar', desc: 'Pequeños ramos de mano, perfectos como detalle o souvenir. Envueltos con papel y listón de la marca, listos para entregar.', flowers: 'Ranunculus · Tulipán · Gypsophila · Rosa miniatura', price: 'desde $350', accent: '#C8818C', accentLight: '#F5E0E3', bg: '#FBF0F1' },
+      { id: 'siemprevivas', name: 'Flores Siempre Vivas', tagline: 'Eternas por diseño', desc: 'Flores preservadas y secas que duran años sin agua ni cuidados. El regalo perfecto para quien quiere que el momento no se olvide.', flowers: 'Rosa preservada · Pampas · Lagurus · Helecho seco', price: 'desde $650', accent: '#B8994E', accentLight: '#F0E8D0', bg: '#FAF4E6' },
+      { id: 'get-well', name: 'Get Well Soon', tagline: 'Sana pronto, con flores', desc: 'Arreglos llenos de color y vida para acompañar la recuperación. Alegres, fragantes y cargados de buenos deseos para quien los recibe.', flowers: 'Girasol · Tulipán · Ranunculus · Rosa salmón · Gypsophila', price: 'desde $750', accent: '#6B9E7A', accentLight: '#D8EDE0', bg: '#EEF7F2' },
+    ];
+
+    function parsePrice(str) {
+      const m = str.match(/[\d,]+/);
+      return m ? parseInt(m[0].replace(',', '')) : 0;
+    }
+
+    // ─── Arrangements per Collection ─────────────────────────────
+    const ARRANGEMENTS = {
+      'gender-reveal': [
+        { id: 'its-a-baby', name: "It's a Baby", price: 1200, desc: 'La llegada más esperada merece flores igual de especiales. Un arreglo neutro y tierno para celebrar la nueva vida.', flowers: 'Rosa blanca · Gypsophila · Eucalipto · Ranunculus crema', size: 'Compacto · aprox. 35cm', img: null },
+        { id: 'baby-on-the-way', name: 'Baby on the Way', price: 1800, desc: 'Suave, luminoso y lleno de emoción. Para celebrar la espera con flores que irradian alegría y ternura.', flowers: 'Tulipán blanco · Peonía · Limonium · Follaje verde', size: 'Mediano · aprox. 45cm', img: null },
+        { id: 'its-a-girl', name: "It's a Girl", price: 2200, desc: 'Dulce y soñador. Un arreglo en tonos rosados suaves que celebra la llegada de una niña con delicadeza y encanto.', flowers: 'Rosa rosa · Ranunculus · Gypsophila · Matthiola rosa', size: 'Mediano · aprox. 45cm', img: null },
+        { id: 'its-a-boy', name: "It's a Boy", price: 2200, desc: 'Fresco y vibrante. Tonos azules y blancos componen un arreglo lleno de personalidad para celebrar la llegada de un niño.', flowers: 'Delfinium azul · Rosa blanca · Hortensia · Eucalipto', size: 'Mediano · aprox. 45cm', img: null },
+        { id: 'little-princess', name: 'Little Princess in Bloom', price: 3200, desc: 'Para la pequeña que ya tiene todo el corazón de la familia. Un arreglo romántico y voluminoso en tonos rosados que lo dice todo.', flowers: 'Peonía rosa · Rosa garden · Ranunculus · Gypsophila · Follaje fino', size: 'Grande · aprox. 60cm', img: null },
+        { id: 'little-prince', name: 'Little Prince in Bloom', price: 3200, desc: 'Para el pequeño príncipe que ya llegó a iluminar todo. Composición elegante en azules y blancos con volumen y presencia.', flowers: 'Hortensia azul · Rosa blanca · Delfinium · Snapdragon · Eucalipto', size: 'Grande · aprox. 60cm', img: null },
+      ],
+      amor: [
+        { id: 'still-falling', name: 'Still Falling for You', price: 1800, desc: 'Para el amor que sigue sorprendiendo. Rosas en tonos profundos con pétalos en capas que se sienten como un abrazo eterno.', flowers: 'Rosa roja · Ranunculus · Anemone · Eucalipto', size: 'Compacto · aprox. 35cm', img: null },
+        { id: 'another-amazing-year', name: 'Another Amazing Year', price: 2600, desc: 'Cada año juntos merece celebrarse a lo grande. Una composición voluminosa y dramática digna del amor que han construido.', flowers: 'Rosa garden · Peonía · Snapdragon rojo · Follaje verde', size: 'Mediano · aprox. 45cm', img: null },
+        { id: 'better-with-you', name: 'Better With You', price: 3400, desc: 'Porque todo es mejor a tu lado. Tonos cálidos y sensuales que hablan de complicidad, de historia, de amor real.', flowers: 'Rosa garden · Ranunculus borgoña · Clavel · Gypsophila', size: 'Mediano-grande · aprox. 55cm', img: null },
+        { id: 'just-because', name: 'Just Because', price: 1100, desc: 'Sin pretexto, sin ocasión especial. Solo porque sí — que es la razón más hermosa de todas.', flowers: 'Rosa roja · Tulipán · Limonium · Eucalipto silver', size: 'Compacto · aprox. 40cm', img: null },
+        { id: 'youll-be-in-my-heart', name: "You'll Be in My Heart", price: 4800, desc: 'El arreglo que no se olvida. Rosas premium en contenedor de lujo, compuesto para marcar un momento que se queda para siempre.', flowers: 'Rosa garden extra · Peonía · Anemone negra · Orquídea · Follaje fino', size: 'Grande · aprox. 65cm', img: null },
+      ],
+      cumpleanos: [
+        { id: 'birthday-girl', name: 'Birthday Girl', price: 1400, desc: 'El arreglo que toda birthday girl merece. Flores en tonos vibrantes y festivos que hacen el momento tan especial como ella.', flowers: 'Rosa garden · Ranunculus · Anemone · Snapdragon · Eucalipto', size: 'Mediano · aprox. 45cm', img: null },
+        { id: 'her-glow-day', name: 'Her Glow Day', price: 1800, desc: 'Porque el mejor regalo es brillar. Un kit de skincare cuidadosamente seleccionado para que su piel celebre tanto como ella. Próximamente con detalles del kit.', flowers: '✨ Kit Skincare · Crema · Sérum · Mascarilla · Detalle especial', size: 'Kit completo', img: null },
+        { id: 'queens-birthday', name: "The Queen's Birthday", price: 2800, desc: 'Para la reina del día. Una composición voluminosa y lujosa que está a la altura de quien la recibe.', flowers: 'Peonía · Rosa garden extra · Ranunculus · Gypsophila · Follaje fino', size: 'Grande · aprox. 60cm', img: null },
+        { id: 'the-good-stuff', name: 'The Good Stuff', price: 1800, desc: 'Un kit pensado para él — sin flores, con todo lo que le gusta. Los detalles del kit estarán disponibles muy pronto.', flowers: '🎁 Kit para él · Contenido por definir', size: 'Kit completo', img: null },
+        { id: 'cheers-to-him', name: 'Cheers to Him', price: 2400, desc: 'Para celebrarlo como se merece. Un kit premium pensado para el hombre que lo tiene todo. Detalles próximamente.', flowers: '🎁 Kit premium para él · Contenido por definir', size: 'Kit premium', img: null },
+      ],
+      graduacion: [
+        { id: 'you-made-it', name: 'You Made It', price: 1100, desc: 'Lo lograste. Un arreglo alegre y colorido para celebrar el esfuerzo de años con flores que están tan orgullosas como tú.', flowers: 'Girasol · Rosa salmón · Solidago · Eucalipto', size: 'Compacto · aprox. 35cm', img: null },
+        { id: 'go-get-the-world', name: 'Go Get the World', price: 1800, desc: 'El mundo es tuyo. Composición vibrante y llena de energía para quien está listo para conquistar todo lo que viene.', flowers: 'Protea · Girasol · Rosa naranja · Follaje tropical', size: 'Mediano · aprox. 50cm', img: null },
+        { id: 'congrats-grad', name: 'Congrats Grad', price: 2400, desc: 'Felicidades en grande. Un arreglo voluminoso y festivo perfecto para la foto del día más especial del año académico.', flowers: 'Rosa garden · Ranunculus · Snapdragon · Limonium · Eucalipto', size: 'Mediano-grande · aprox. 55cm', img: null },
+        { id: 'straight-as', name: "Straight A's & Flowers", price: 3200, desc: 'Para el que siempre dio todo. Lujoso, imponente y absolutamente merecido — igual que el graduado que lo recibe.', flowers: 'Peonía · Rosa garden · Protea · Solidago · Follaje fino', size: 'Grande · aprox. 65cm', img: null },
+      ],
+      bride: [
+        { id: 'she-said-yes', name: 'She Said Yes', price: 2200, desc: 'Para el momento más emocionante. Un ramo romántico y etéreo que celebra el sí más importante de su vida.', flowers: 'Rosa garden blanca · Gypsophila · Eucalipto · Ranunculus blanco', size: 'Mediano · aprox. 45cm', img: null },
+        { id: 'her-last-bouquet', name: 'Her Last Bouquet', price: 3800, desc: 'El último ramo como soltera — y el más memorable. Voluminoso, lujoso y hecho para la foto más especial antes del gran día.', flowers: 'Peonía · Rosa garden · Orquídea · Gypsophila · Follaje fino', size: 'Grande · aprox. 60cm', img: null },
+      ],
+      bolos: [
+        { id: 'candle-bolo', name: 'The Candle Bolo', price: 350, desc: 'Un alajero que se transforma en vela. El detalle más inesperado y encantador — funcional, fragante y listo para entregar.', flowers: '🕯️ Alajero · Vela aromática · Tarjetita de marca', size: 'Mini · listo para entregar', img: null },
+        { id: 'little-green', name: 'Bolo Little Green', price: 350, desc: 'Una suculenta mini con tarjetita personalizada. Pequeña, viva y con mucho carácter — el detalle que todos quieren llevarse.', flowers: '🌵 Suculenta mini · Macetita · Tarjetita personalizada', size: 'Mini · listo para entregar', img: null },
+        { id: 'bolo-pulsera', name: 'Bolo Pulsera', price: 350, desc: 'Una pulsera de perlas con tarjetita incluida. Elegante, delicada y lista para ponerse — el bolo que se convierte en recuerdo.', flowers: '📿 Pulsera de perlas · Tarjetita de marca', size: 'Mini · listo para entregar', img: null },
+        { id: 'bolo-jabon', name: 'Bolo Jabón y Crema', price: 350, desc: 'Un kit de jabón y crema para el hogar. Envuelto con el estilo de la marca, perfecto para llevar y regalar con amor.', flowers: '🧴 Jabón artesanal · Crema para manos · Envoltorio de marca', size: 'Mini · listo para entregar', img: null },
+        { id: 'bolo-stationery', name: 'Bolo de Stationery', price: 350, desc: 'Tarjetitas de stationery para dar gracias. Bonitas, escritas a mano y listas para que cada invitado se lleve un mensaje especial.', flowers: '✉️ Set de tarjetitas · Diseño exclusivo · Envoltorio de marca', size: 'Mini · listo para entregar', img: null },
+      ],
+      agradecimientos: [
+        { id: 'for-your-home', name: 'For Your Beautiful Home', price: 850, desc: 'Un toque eterno para tu espacio. Flores preservadas y secas que embellecen cualquier rincón sin necesidad de agua ni cuidados.', flowers: 'Pampas · Rosa preservada · Lagurus · Helecho seco', size: 'Compacto · aprox. 30cm', img: null },
+        { id: 'made-with-love', name: 'Made With Love', price: 1200, desc: 'Hecho con amor, para durar años. Una composición cálida y artesanal de flores eternas que se siente como un abrazo permanente.', flowers: 'Rosa preservada · Ruscus seco · Pampas · Lunaria', size: 'Mediano · aprox. 40cm', img: null },
+        { id: 'one-of-a-kind', name: "You're One of a Kind", price: 1800, desc: 'Única como quien la recibe. Una pieza irrepetible de flores preservadas en composición artística, lista para quedarse para siempre.', flowers: 'Rosa preservada · Protea seca · Lagurus · Pampas · Eucalipto seco', size: 'Mediano-grande · aprox. 50cm', img: null },
+        { id: 'youre-a-gem', name: "You're a Gem", price: 2600, desc: 'Una joya botánica. Nuestra pieza más elaborada — seleccionada flor por flor para crear algo verdaderamente especial.', flowers: 'Rosa preservada extra · Pampas premium · Protea · Lunaria · Helecho · Ramas secas', size: 'Grande · aprox. 60cm', img: null },
+      ],
+      menos900: [
+        { id: 'candle-bolo-m', name: 'The Candle Bolo', price: 350, desc: 'Un alajero que se transforma en vela. El detalle más inesperado y encantador — funcional, fragante y listo para entregar.', flowers: '🕯️ Alajero · Vela aromática · Tarjetita de marca', size: 'Mini · listo para entregar', img: null },
+        { id: 'little-green-m', name: 'Bolo Little Green', price: 350, desc: 'Una suculenta mini con tarjetita personalizada. Pequeña, viva y con mucho carácter — el detalle que todos quieren llevarse.', flowers: '🌵 Suculenta mini · Macetita · Tarjetita personalizada', size: 'Mini · listo para entregar', img: null },
+        { id: 'bolo-pulsera-m', name: 'Bolo Pulsera', price: 350, desc: 'Una pulsera de perlas con tarjetita incluida. Elegante, delicada y lista para ponerse — el bolo que se convierte en recuerdo.', flowers: '📿 Pulsera de perlas · Tarjetita de marca', size: 'Mini · listo para entregar', img: null },
+        { id: 'bolo-jabon-m', name: 'Bolo Jabón y Crema', price: 350, desc: 'Un kit de jabón y crema para el hogar. Envuelto con el estilo de la marca, perfecto para llevar y regalar con amor.', flowers: '🧴 Jabón artesanal · Crema para manos · Envoltorio de marca', size: 'Mini · listo para entregar', img: null },
+        { id: 'bolo-stationery-m', name: 'Bolo de Stationery', price: 350, desc: 'Tarjetitas de stationery para dar gracias. Bonitas, escritas a mano y listas para que cada invitado se lleve un mensaje especial.', flowers: '✉️ Set de tarjetitas · Diseño exclusivo · Envoltorio de marca', size: 'Mini · listo para entregar', img: null },
+        { id: 'dried-beautiful-m', name: 'Dried & Beautiful', price: 650, desc: 'Seca, silvestre y absolutamente hermosa. Una composición de flores secas que transforma cualquier espacio con su textura y carácter natural.', flowers: 'Pampas · Lagurus · Helecho seco · Ramas naturales', size: 'Compacto · aprox. 30cm', img: null },
+        { id: 'sunny-hug-m', name: 'Sunny Hug', price: 750, desc: 'Un abrazo en forma de flores. Girasoles y rosas salmón que llenan cualquier cuarto de luz y energía positiva.', flowers: 'Girasol · Rosa salmón · Solidago · Eucalipto', size: 'Compacto · aprox. 35cm', img: null },
+        { id: 'for-your-home-m', name: 'For Your Beautiful Home', price: 850, desc: 'Un toque eterno para tu espacio. Flores preservadas y secas que embellecen cualquier rincón sin necesidad de agua ni cuidados.', flowers: 'Pampas · Rosa preservada · Lagurus · Helecho seco', size: 'Compacto · aprox. 30cm', img: null },
+      ],
+      siemprevivas: [
+        { id: 'dried-beautiful', name: 'Dried & Beautiful', price: 650, desc: 'Seca, silvestre y absolutamente hermosa. Una composición de flores secas que transforma cualquier espacio con su textura y carácter natural.', flowers: 'Pampas · Lagurus · Helecho seco · Ramas naturales', size: 'Compacto · aprox. 30cm', img: null },
+        { id: 'raw-nature', name: 'Raw Nature', price: 950, desc: 'La naturaleza en su estado más puro. Flores y plantas secas sin procesar que traen la esencia del campo a tu hogar.', flowers: 'Pampas natural · Ramas secas · Lunaria · Hierba seca', size: 'Mediano · aprox. 40cm', img: null },
+        { id: 'wild-dry', name: 'Wild & Dry', price: 1300, desc: 'Silvestre, libre y eterno. Una composición orgánica de plantas secas con volumen y movimiento que se ve diferente desde cada ángulo.', flowers: 'Pampas XL · Protea seca · Lagurus · Ramas · Helecho', size: 'Mediano-grande · aprox. 50cm', img: null },
+        { id: 'eternal-garden', name: 'Eternal Garden', price: 1800, desc: 'Un jardín que dura para siempre. Flores preservadas y secas en perfecta armonía — elegante, sofisticado y absolutamente único.', flowers: 'Rosa preservada · Pampas · Protea seca · Lunaria · Eucalipto seco · Lagurus', size: 'Grande · aprox. 60cm', img: null },
+        { id: 'forever-petals', name: 'Forever Petals', price: 2600, desc: 'Pétalos que no se marchitan. Nuestra composición más premium de flores siemprevivas — un regalo que permanece tan bello como el primer día.', flowers: 'Rosa preservada extra · Peonía preservada · Pampas premium · Protea · Ramas nobles', size: 'XL · aprox. 70cm', img: null },
+      ],
+      'get-well': [
+        { id: 'sunny-hug', name: 'Sunny Hug', price: 750, desc: 'Un abrazo en forma de flores. Girasoles y rosas salmón que llenan cualquier cuarto de luz y energía positiva.', flowers: 'Girasol · Rosa salmón · Solidago · Eucalipto', size: 'Compacto · aprox. 35cm', img: null },
+        { id: 'feel-better', name: 'Feel Better', price: 1200, desc: 'Colores suaves y fragantes para acompañar la recuperación. Un arreglo cálido que dice todo lo que el corazón quiere expresar.', flowers: 'Tulipán · Ranunculus · Gypsophila · Rosa nude', size: 'Mediano · aprox. 45cm', img: null },
+        { id: 'bloom-again', name: 'Bloom Again', price: 1800, desc: 'Porque volver a florecer es lo más hermoso. Composición alegre y voluminosa con flores de temporada en tonos pasteles.', flowers: 'Peonía · Ranunculus · Snapdragon · Follaje verde', size: 'Mediano-grande · aprox. 55cm', img: null },
+        { id: 'healing-garden', name: 'Healing Garden', price: 2600, desc: 'Un jardín portátil de bienestar. Flores silvestres y aromáticas que purifican el ambiente y elevan el ánimo.', flowers: 'Lavanda · Rosa garden · Limonium · Eucalipto · Matthiola', size: 'Grande · aprox. 60cm', img: null },
+      ],
+      condolencias: [
+        {
+          id: 'para-el-calor',
+          name: 'White Calm',
+          price: 1200,
+          desc: 'Serenidad en su forma más pura. Lilium blanco y snapdragon en florero de cristal, con follaje silvestre que abraza cada tallo.',
+          flowers: 'Lilium blanco · Snapdragon · Eucalipto · Follaje silvestre',
+          size: 'Compacto · aprox. 35cm',
+          img: 'uploads/Captura de pantalla 2026-04-30 a la(s) 11.32.29.png',
+        },
+        {
+          id: 'still-garden',
+          name: 'Still Garden',
+          price: 2500,
+          desc: 'Un jardín en silencio. Rosas blancas y delfinium en contenedor blanco con amaranto verde colgante — dignidad y volumen.',
+          flowers: 'Rosa blanca · Delfinium · Amaranto verde · Matthiola',
+          size: 'Mediano · aprox. 50cm',
+          img: 'uploads/Captura de pantalla 2026-04-30 a la(s) 11.32.40.png',
+        },
+        {
+          id: 'ivory-grace',
+          name: 'Ivory Grace',
+          price: 3800,
+          desc: 'Gracia pura en blanco. Iris, claveles y orquídeas componen una pieza estructurada que acompaña con presencia y delicadeza.',
+          flowers: 'Iris blanco · Clavel blanco · Orquídea · Rosa garden',
+          size: 'Mediano-grande · aprox. 55cm',
+          img: 'uploads/Captura de pantalla 2026-04-30 a la(s) 11.32.58.png',
+        },
+        {
+          id: 'wild-white',
+          name: 'Wild White',
+          price: 5000,
+          desc: 'Silvestre y sublime. Lilium en florero de cristal con follaje abundante — libre, natural, lleno de significado.',
+          flowers: 'Lilium blanco · Snapdragon · Olivo · Amaranto · Gypsophila',
+          size: 'Grande · aprox. 65cm',
+          img: 'uploads/Captura de pantalla 2026-04-30 a la(s) 11.32.06.png',
+        },
+        {
+          id: 'crystal-bloom',
+          name: 'Crystal Bloom',
+          price: 6500,
+          desc: 'Lujo botánico en tonos cristalinos. Una obra de arte floral que honra con la misma elegancia con que el tiempo lo merece.',
+          flowers: 'Orquídea blanca · Rosa garden · Lirio · Helecho fino',
+          size: 'Grande · aprox. 75cm',
+          img: null,
+        },
+        {
+          id: 'eternal-white',
+          name: 'Eternal White',
+          price: 8500,
+          desc: 'Nuestra pieza más sublime. Una composición arquitectónica de flores premium que permanece en la memoria como un poema visual.',
+          flowers: 'Orquídea Phalaenopsis · Rosa garden extra · Cala · Gypsophila · Eucalipto · Peonía',
+          size: 'XL · aprox. 90cm',
+          img: null,
+        },
+      ],
+    };
+
+    // ─── Arrangement Card ─────────────────────────────────────────
+    function ArrangementCard({ arr, col, onAddToCart }) {
+      const [added, setAdded] = useState(false);
+      const [hovered, setHovered] = useState(false);
+
+      const handleAdd = () => {
+        onAddToCart({
+          collectionId: col.id,
+          arrangementId: arr.id,
+          name: arr.name,
+          size: arr.size,
+          price: arr.price,
+          img: arr.img || '',
+          accent: col.accent,
+          accentLight: col.accentLight,
+        });
+        setAdded(true);
+        setTimeout(() => setAdded(false), 2000);
+      };
+
+      return (
+        <div
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+          style={{
+            background: hovered ? C.cream : col.bg,
+            border: `1px solid ${hovered ? col.accent : 'rgba(92,110,74,0.15)'}`,
+            transition: 'all 0.3s ease',
+            display: 'flex', flexDirection: 'column',
+          }}
+        >
+          {/* Image */}
+          <div style={{ overflow: 'hidden', height: 260, position: 'relative' }}>
+            {arr.img ? (
+              <img
+                src={arr.img}
+                alt={arr.name}
+                style={{
+                  width: '100%', height: '100%', objectFit: 'cover',
+                  transform: hovered ? 'scale(1.05)' : 'scale(1)',
+                  transition: 'transform 0.5s ease',
+                  display: 'block',
+                }}
+              />
+            ) : (
+              <PlaceholderImg label={arr.name} height={260} bg={col.accentLight} stripe={col.accent} />
+            )}
+          </div>
+
+          {/* Info */}
+          <div style={{ padding: '24px 24px 20px', flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontSize: 28, color: C.ink, lineHeight: 1 }}>{arr.name}</h3>
+            <div style={{ fontFamily: "'Jost', sans-serif", fontWeight: 200, fontSize: 9, letterSpacing: 3, color: col.accent }}>{arr.size.toUpperCase()}</div>
+            <p style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', fontWeight: 300, fontSize: 15, lineHeight: 1.6, color: C.inkSoft, flex: 1 }}>{arr.desc}</p>
+            <div style={{ fontFamily: "'Jost', sans-serif", fontWeight: 200, fontSize: 10, color: C.ink, opacity: 0.5, lineHeight: 1.6 }}>{arr.flowers}</div>
+          </div>
+
+          {/* Price + CTA */}
+          <div style={{ padding: '0 24px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontSize: 28, color: col.accent }}>
+              ${arr.price.toLocaleString()} <span style={{ fontFamily: "'Jost', sans-serif", fontSize: 10, opacity: 0.5 }}>MXN</span>
+            </div>
+            <button onClick={handleAdd} style={{
+              background: added ? col.accent : C.wine, border: 'none', cursor: 'pointer',
+              fontFamily: "'Jost', sans-serif", fontWeight: 300, fontSize: 8,
+              letterSpacing: 3, textTransform: 'uppercase', color: C.cream,
+              padding: '12px 18px', transition: 'background 0.3s ease', whiteSpace: 'nowrap',
+            }}>
+              {added ? '✓ Agregado' : 'Agregar'}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    function PlaceholderImg({ label, height = 400, bg = C.creamDark, stripe = C.blushPale }) {
+      const id = 'ph-' + label.replace(/\s/g, '').replace(/[^a-zA-Z0-9]/g, '');
+      return (
+        <svg width="100%" height={height} viewBox={`0 0 800 ${height}`} preserveAspectRatio="xMidYMid slice" style={{ display: 'block' }}>
+          <defs>
+            <pattern id={id} patternUnits="userSpaceOnUse" width="20" height="20" patternTransform="rotate(45)">
+              <rect width="20" height="20" fill={bg} />
+              <rect width="10" height="20" fill={stripe} opacity="0.3" />
+            </pattern>
+          </defs>
+          <rect width="800" height={height} fill={`url(#${id})`} />
+          <text x="400" y={height / 2} textAnchor="middle" dominantBaseline="middle" fontFamily="'Jost', sans-serif" fontSize="12" fontWeight="200" letterSpacing="4" fill={C.ink} opacity="0.4">{label.toUpperCase()}</text>
+        </svg>
+      );
+    }
+
+    // ─── Cart Drawer ──────────────────────────────────────────────
+    function CartDrawer({ open, onClose, items, onQty, onRemove }) {
+      const total = items.reduce((s, i) => s + i.price * i.qty, 0);
+      const totalItems = items.reduce((s, i) => s + i.qty, 0);
+
+      const [payLoading, setPayLoading] = useState(false);
+
+      const handlePay = () => {
+        // El carrito ya se persiste en localStorage automáticamente.
+        // Solo redirigimos al checkout custom.
+        window.location.href = '/checkout.html';
+      };
+
+      return (
+        <>
+          {open && <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(28,20,16,0.4)', zIndex: 200, backdropFilter: 'blur(2px)' }} />}
+          <div style={{
+            position: 'fixed', top: 0, right: 0, bottom: 0, width: 420, zIndex: 201,
+            background: C.cream, boxShadow: '-8px 0 40px rgba(0,0,0,0.12)',
+            transform: open ? 'translateX(0)' : 'translateX(100%)',
+            transition: 'transform 0.4s cubic-bezier(0.16,1,0.3,1)',
+            display: 'flex', flexDirection: 'column',
+          }}>
+            <div style={{ padding: '28px 32px 20px', borderBottom: `1px solid rgba(110,42,56,0.1)`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontFamily: "'Jost', sans-serif", fontWeight: 200, fontSize: 8, letterSpacing: 5, color: C.wine, opacity: 0.7, marginBottom: 4 }}>TU PEDIDO</div>
+                <div style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontSize: 26, color: C.ink }}>
+                  {totalItems === 0 ? 'Carrito vacío' : `${totalItems} ${totalItems === 1 ? 'arreglo' : 'arreglos'}`}
+                </div>
+              </div>
+              <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: C.ink, opacity: 0.4 }}>✕</button>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }}>
+              {items.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '60px 0' }}>
+                  <p style={{ fontFamily: "'Jost', sans-serif", fontWeight: 200, fontSize: 12, letterSpacing: 2, color: C.ink, opacity: 0.4 }}>Agrega arreglos para comenzar</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  {items.map((item, idx) => (
+                    <div key={idx} style={{ display: 'flex', gap: 16, paddingBottom: 20, borderBottom: `1px solid rgba(110,42,56,0.08)` }}>
+                      <div style={{ width: 64, height: 80, background: item.accentLight, flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {item.img ? (
+                          <img src={item.img} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <div style={{ width: 16, height: 16, background: item.accent, borderRadius: '50%' }} />
+                        )}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontSize: 18, color: C.ink, marginBottom: 2 }}>{item.name}</div>
+                        <div style={{ fontFamily: "'Jost', sans-serif", fontWeight: 200, fontSize: 9, letterSpacing: 3, color: item.accent, marginBottom: 10 }}>{item.size.toUpperCase()}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', alignItems: 'center' }}>
+                            <button onClick={() => onQty(idx, item.qty - 1)} style={{ width: 28, height: 28, background: 'transparent', border: `1px solid rgba(110,42,56,0.2)`, cursor: 'pointer', fontSize: 14, color: C.ink }}>−</button>
+                            <span style={{ width: 32, textAlign: 'center', fontFamily: "'Jost', sans-serif", fontWeight: 300, fontSize: 13 }}>{item.qty}</span>
+                            <button onClick={() => onQty(idx, item.qty + 1)} style={{ width: 28, height: 28, background: 'transparent', border: `1px solid rgba(110,42,56,0.2)`, cursor: 'pointer', fontSize: 14, color: C.ink }}>+</button>
+                          </div>
+                          <div style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontSize: 18, color: C.ink }}>${(item.price * item.qty).toLocaleString()}</div>
+                        </div>
+                      </div>
+                      <button onClick={() => onRemove(idx)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.ink, opacity: 0.25, fontSize: 12, alignSelf: 'flex-start', padding: 4 }}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {items.length > 0 && (
+              <div style={{ padding: '20px 32px 32px', borderTop: `1px solid rgba(110,42,56,0.1)` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+                  <span style={{ fontFamily: "'Jost', sans-serif", fontWeight: 200, fontSize: 10, letterSpacing: 3, color: C.ink, opacity: 0.5 }}>SUBTOTAL</span>
+                  <span style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontSize: 20, color: C.ink }}>${total.toLocaleString()} <span style={{ fontSize: 12, opacity: 0.5 }}>MXN</span></span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid rgba(110,42,56,0.08)' }}>
+                  <span style={{ fontFamily: "'Jost', sans-serif", fontWeight: 200, fontSize: 10, letterSpacing: 3, color: C.ink, opacity: 0.5 }}>ENVÍO</span>
+                  <span style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontSize: 20, color: C.ink }}>$99 <span style={{ fontSize: 12, opacity: 0.5 }}>MXN</span></span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 20 }}>
+                  <span style={{ fontFamily: "'Jost', sans-serif", fontWeight: 200, fontSize: 10, letterSpacing: 3, color: C.ink, opacity: 0.5 }}>TOTAL</span>
+                  <span style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontSize: 28, color: C.ink }}>${(total + 99).toLocaleString()} <span style={{ fontSize: 14, opacity: 0.5 }}>MXN</span></span>
+                </div>
+                {/* Pagar — Mercado Pago Checkout (acepta tarjeta, débito, OXXO, SPEI, transferencia, etc.) */}
+                <button onClick={handlePay} disabled={payLoading || items.length === 0} style={{
+                  width: '100%', background: payLoading ? C.inkSoft : C.wine, border: 'none',
+                  cursor: payLoading ? 'wait' : 'pointer',
+                  fontFamily: "'Jost', sans-serif", fontWeight: 300, fontSize: 10,
+                  letterSpacing: 4, textTransform: 'uppercase', color: C.cream,
+                  padding: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                  marginBottom: 10, transition: 'background 0.2s',
+                }}>
+                  {payLoading ? 'Procesando…' : 'Pagar ahora'}
+                </button>
+
+                {/* Métodos de pago aceptados */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, flexWrap: 'wrap', marginTop: 6 }}>
+                  {['Visa', 'Mastercard', 'Amex', 'OXXO', 'SPEI', 'Transferencia'].map(m => (
+                    <span key={m} style={{
+                      fontFamily: "'Jost', sans-serif", fontWeight: 300, fontSize: 8,
+                      letterSpacing: 2, color: C.ink, opacity: 0.5,
+                      padding: '4px 8px', border: '1px solid rgba(28,20,16,0.15)',
+                    }}>{m.toUpperCase()}</span>
+                  ))}
+                </div>
+                <p style={{ fontFamily: "'Jost', sans-serif", fontWeight: 200, fontSize: 9, color: C.ink, opacity: 0.35, textAlign: 'center', marginTop: 14, lineHeight: 1.5 }}>
+                  Pago seguro · acepta cualquier tarjeta o método
+                </p>
+              </div>
+            )}
+          </div>
+        </>
+      );
+    }
+
+    // ─── Nav ──────────────────────────────────────────────────────
+    function Nav({ cartCount, onCartOpen, currentId }) {
+      const [scrolled, setScrolled] = useState(false);
+      const [colOpen, setColOpen] = useState(false);
+      const dropdownRef = useRef(null);
+
+      useEffect(() => {
+        const onScroll = () => setScrolled(window.scrollY > 60);
+        window.addEventListener('scroll', onScroll, { passive: true });
+        return () => window.removeEventListener('scroll', onScroll);
+      }, []);
+
+      useEffect(() => {
+        const handler = (e) => {
+          if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setColOpen(false);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+      }, []);
+
+      const currentCol = COLLECTIONS.find(c => c.id === currentId);
+
+      return (
+        <nav style={{
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0 48px',
+          height: scrolled ? 64 : 80,
+          background: 'rgba(237,232,223,0.97)',
+          backdropFilter: 'blur(12px)',
+          borderBottom: '1px solid rgba(200,129,140,0.15)',
+          transition: 'all 0.4s ease',
+        }}>
+          {/* Logo */}
+          <a href="index.html" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2, flexShrink: 0 }}>
+            <span style={{ fontFamily: "'Jost', sans-serif", fontWeight: 200, fontSize: 9, letterSpacing: 6, color: C.ink, opacity: 0.6 }}>the</span>
+            <span style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontSize: 18, letterSpacing: 5, color: C.ink }}>FLOWER LAB</span>
+            <span style={{ fontFamily: "'Jost', sans-serif", fontWeight: 200, fontSize: 7, letterSpacing: 5, color: C.wine, opacity: 0.8 }}>BOTANICAL STUDIO</span>
+          </a>
+
+          {/* Nav links */}
+          <div style={{ display: 'flex', gap: 0, alignItems: 'center', marginLeft: 'auto' }}>
+            <a href="index.html" style={{
+              textDecoration: 'none',
+              fontFamily: "'Jost', sans-serif", fontWeight: 300, fontSize: 9,
+              letterSpacing: 4, textTransform: 'uppercase', color: C.inkSoft,
+              padding: '10px 22px', display: 'inline-block', opacity: 0.7,
+              transition: 'opacity 0.2s',
+            }}
+            onMouseEnter={e => e.target.style.opacity = 1}
+            onMouseLeave={e => e.target.style.opacity = 0.7}
+            >Inicio</a>
+
+            {/* Colecciones dropdown */}
+            <div ref={dropdownRef} style={{ position: 'relative' }}>
+              <button
+                onClick={() => setColOpen(o => !o)}
+                style={{
+                  background: colOpen ? C.wine : 'transparent',
+                  border: 'none', cursor: 'pointer',
+                  fontFamily: "'Jost', sans-serif", fontWeight: 300, fontSize: 9,
+                  letterSpacing: 4, textTransform: 'uppercase',
+                  color: colOpen ? C.cream : C.inkSoft,
+                  padding: '10px 22px', display: 'flex', alignItems: 'center', gap: 6,
+                  transition: 'all 0.2s',
+                }}
+              >
+                Colecciones
+                <svg width="8" height="5" viewBox="0 0 8 5" fill="none">
+                  <path d={colOpen ? 'M1 4l3-3 3 3' : 'M1 1l3 3 3-3'} stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                </svg>
+              </button>
+
+              {colOpen && (
+                <div style={{
+                  position: 'absolute', top: 'calc(100% + 4px)', right: 0,
+                  background: C.cream, boxShadow: '0 8px 32px rgba(28,20,16,0.12)',
+                  border: '1px solid rgba(200,129,140,0.15)',
+                  minWidth: 240, zIndex: 200,
+                  maxHeight: 420, overflowY: 'auto',
+                }}>
+                  {COLLECTIONS.map(c => (
+                    <a key={c.id} href={`collection.html?id=${c.id}`} style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '12px 20px',
+                      textDecoration: 'none',
+                      background: c.id === currentId ? c.accentLight : 'transparent',
+                      borderLeft: c.id === currentId ? `3px solid ${c.accent}` : '3px solid transparent',
+                      transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={e => { if (c.id !== currentId) e.currentTarget.style.background = C.creamDark; }}
+                    onMouseLeave={e => { if (c.id !== currentId) e.currentTarget.style.background = 'transparent'; }}
+                    >
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: c.accent, flexShrink: 0 }} />
+                      <div>
+                        <div style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontSize: 16, color: C.ink, lineHeight: 1.2 }}>{c.name}</div>
+                        <div style={{ fontFamily: "'Jost', sans-serif", fontWeight: 200, fontSize: 8, letterSpacing: 2, color: c.accent, opacity: 0.8 }}>{c.price}</div>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Cart icon */}
+            <button onClick={onCartOpen} style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              position: 'relative', padding: '10px 16px',
+              display: 'flex', alignItems: 'center', marginLeft: 8,
+            }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.ink} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                <path d="M1 1h4l2.68 13.39a2 2 0 001.99 1.61h9.66a2 2 0 001.98-1.68L23 6H6"/>
+              </svg>
+              {cartCount > 0 && (
+                <span style={{
+                  position: 'absolute', top: 4, right: 8,
+                  background: C.wine, color: C.cream,
+                  fontFamily: "'Jost', sans-serif", fontWeight: 300, fontSize: 9,
+                  width: 16, height: 16, borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>{cartCount}</span>
+              )}
+            </button>
+          </div>
+        </nav>
+      );
+    }
+
+    // ─── Collection Detail ────────────────────────────────────────
+    function CollectionPage() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+      const col = COLLECTIONS.find(c => c.id === id);
+
+      const [cartItems, setCartItems] = useState(() => {        try { return JSON.parse(localStorage.getItem('flowerlab_cart') || '[]'); } catch { return []; }
+      });
+      const [cartOpen, setCartOpen] = useState(false);
+      const [sortOrder, setSortOrder] = useState('none');
+
+      useEffect(() => {
+        localStorage.setItem('flowerlab_cart', JSON.stringify(cartItems));
+      }, [cartItems]);
+
+      if (!col) {
+        // Show collection selector
+        return (
+          <div style={{ minHeight: '100vh', background: C.cream, paddingTop: 120 }}>
+            <Nav cartCount={0} onCartOpen={() => {}} />
+            <div style={{ maxWidth: 900, margin: '0 auto', padding: '60px 80px' }}>
+              <div style={{ fontFamily: "'Jost', sans-serif", fontWeight: 200, fontSize: 9, letterSpacing: 8, color: C.wine, marginBottom: 20, opacity: 0.7 }}>COLECCIONES</div>
+              <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontSize: 64, lineHeight: 1, color: C.ink, marginBottom: 48 }}>Elige una colección</h1>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {COLLECTIONS.map(c => (
+                  <a key={c.id} href={'collection.html?id=' + c.id} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '20px 0', borderBottom: `1px solid rgba(110,42,56,0.08)`,
+                    textDecoration: 'none',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                      <div style={{ width: 10, height: 10, background: c.accent, borderRadius: '50%' }} />
+                      <span style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontSize: 24, color: C.ink }}>{c.name}</span>
+                      <span style={{ fontFamily: "'Jost', sans-serif", fontWeight: 200, fontSize: 9, letterSpacing: 3, color: c.accent }}>{c.tagline.toUpperCase()}</span>
+                    </div>
+                    <span style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontSize: 18, color: c.accent }}>{c.price}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      const cartCount = cartItems.reduce((s, i) => s + i.qty, 0);
+
+      const updateQty = (idx, qty) => {
+        if (qty <= 0) setCartItems(prev => prev.filter((_, i) => i !== idx));
+        else setCartItems(prev => prev.map((item, i) => i === idx ? { ...item, qty } : item));
+      };
+
+      const removeItem = (idx) => setCartItems(prev => prev.filter((_, i) => i !== idx));
+
+      document.title = `The Flower Lab · ${col.name}`;
+
+      return (
+        <div style={{ minHeight: '100vh', background: col.bg }}>
+          <Nav cartCount={cartCount} onCartOpen={() => setCartOpen(true)} currentId={col.id} />
+
+          {/* Hero Image */}
+          <div style={{ paddingTop: 92, background: col.bg }}>
+            <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 80px 0' }}>
+              <a href="index.html" style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                textDecoration: 'none',
+                fontFamily: "'Jost', sans-serif", fontWeight: 300, fontSize: 9,
+                letterSpacing: 4, textTransform: 'uppercase', color: col.accent,
+                opacity: 0.8, transition: 'opacity 0.2s', marginBottom: 24, display: 'inline-flex',
+              }}
+              onMouseEnter={e => e.currentTarget.style.opacity = 1}
+              onMouseLeave={e => e.currentTarget.style.opacity = 0.8}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 12H5M12 5l-7 7 7 7"/>
+                </svg>
+                Regresar
+              </a>
+            </div>
+            <div style={{ maxWidth: 1200, margin: '0 auto', padding: '16px 80px 0' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 20 }}>
+                <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, fontSize: 56, lineHeight: 1, color: C.ink }}>{col.name}</h1>
+                <span style={{ fontFamily: "'Jost', sans-serif", fontWeight: 200, fontSize: 9, letterSpacing: 5, color: col.accent }}>{col.tagline.toUpperCase()}</span>
+              </div>
+              <div style={{ width: 40, height: 1, background: col.accent, marginTop: 20 }} />
+            </div>
+          </div>
+
+          {/* Arrangements Grid */}
+          {ARRANGEMENTS[col.id] && (
+            <div style={{ padding: '40px 80px 120px', maxWidth: 1200, margin: '0 auto' }}>
+
+              {/* Sort controls */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
+                <span style={{ fontFamily: "'Jost', sans-serif", fontWeight: 200, fontSize: 9, letterSpacing: 4, color: C.ink, opacity: 0.5 }}>ORDENAR POR:</span>
+                {[
+                  { label: 'Por defecto', value: 'none' },
+                  { label: 'Precio: menor a mayor', value: 'asc' },
+                  { label: 'Precio: mayor a menor', value: 'desc' },
+                ].map(opt => (
+                  <button key={opt.value} onClick={() => setSortOrder(opt.value)} style={{
+                    background: sortOrder === opt.value ? C.wine : 'transparent',
+                    border: `1px solid ${sortOrder === opt.value ? C.wine : 'rgba(110,42,56,0.25)'}`,
+                    cursor: 'pointer',
+                    fontFamily: "'Jost', sans-serif", fontWeight: 300, fontSize: 9,
+                    letterSpacing: 3, color: sortOrder === opt.value ? C.cream : C.ink,
+                    padding: '8px 18px', transition: 'all 0.2s ease',
+                  }}>{opt.label}</button>
+                ))}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+                {(sortOrder === 'none' ? [...ARRANGEMENTS[col.id]] : [...ARRANGEMENTS[col.id]].sort((a, b) => sortOrder === 'asc' ? a.price - b.price : b.price - a.price)).map(arr => (
+                  <ArrangementCard key={arr.id} arr={arr} col={col} onAddToCart={(item) => {
+                    setCartItems(prev => {
+                      const idx = prev.findIndex(i => i.arrangementId === item.arrangementId);
+                      if (idx >= 0) {
+                        const next = [...prev];
+                        next[idx] = { ...next[idx], qty: next[idx].qty + 1 };
+                        return next;
+                      }
+                      return [...prev, { ...item, qty: 1 }];
+                    });
+                    setCartOpen(true);
+                  }} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} items={cartItems} onQty={updateQty} onRemove={removeItem} />
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<CollectionPage />);
+  </script>
+</body>
+</html>
