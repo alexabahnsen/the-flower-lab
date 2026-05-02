@@ -66,7 +66,7 @@ export default async function handler(req, res) {
       // Dirección de envío opcional — descomentar si la quieres recolectar:
       // shipping_address_collection: { allowed_countries: ['MX'] },
       phone_number_collection: { enabled: true },
-      locale: 'es',
+      locale: 'auto',
       success_url,
       cancel_url,
       // Para OXXO los vouchers expiran en 3 días por default; configurable:
