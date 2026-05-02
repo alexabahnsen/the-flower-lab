@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+</head>
+<body>
+<pre id="out">Loading...</pre>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+async function main() {
+  const resp = await fetch('uploads/the-flower-lab-v2.pdf');
+  const buf = await resp.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data: buf}).promise;
+  let all = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const tc = await page.getTextContent();
+    all += `\n--- PAGE ${i} ---\n`;
+    all += tc.items.map(x => x.str).join(' ');
+  }
+  document.getElementById('out').textContent = all;
+}
+main().catch(e => document.getElementById('out').textContent = e.message);
+</script>
+</body>
+</html>
